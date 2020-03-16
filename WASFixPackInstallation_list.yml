@@ -1,5 +1,5 @@
 ---
-- hosts: b01lvi21539180
+- hosts: '{{ exec_hosts }}'
   gather_facts: true
   remote_user: ansible
   become: yes
