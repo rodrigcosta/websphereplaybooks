@@ -1,0 +1,34 @@
+---
+- name:          "Verify if pid file"
+  shell:         "ps -p `cat '{{ __was_install_location }}/profiles/{{ __profile_name }}/logs/nodeagent/nodeagent.pid'` > /dev/null"
+  register:      nodeagent_is_running
+  ignore_errors: true
+
+- name:          "Start Node Agent"
+  command:       "{{ __was_install_location }}/profiles/{{ __profile_name }}/bin/startNode.sh"
+  register:      cout
+  changed_when:  cout.rc == 0
+  when:          nodeagent_is_running.rc != 0
+
+- name:          Wait 60 seconds for NODEAGENT to activate
+  pause:
+    seconds:     60
+  when:          nodeagent_is_running.rc != 0
+
+- name:          "Verify if pid file"
+  shell:         "ps -p `cat '{{ __was_install_location }}/profiles/{{ __profile_name }}/logs/{{ item }}/{{ item }}.pid'` > /dev/null"
+  register:      server_is_running
+  ignore_errors: true
+  with_items:    "{{ __servers }}"
+
+#- debug:        var=server_is_running
+- name:          "Start Servers"
+  command:       "{{ __was_install_location }}/profiles/{{ __profile_name }}/bin/startServer.sh {{ item.item }}"
+  register:      cout
+  changed_when:  cout.rc == 0
+  when:          item.rc != 0
+  with_items:    "{{ server_is_running.results }}"
+
+- name:          Wait 30 seconds for SERVER to activate
+  pause:
+    seconds:     30
