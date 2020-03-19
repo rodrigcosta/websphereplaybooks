@@ -1,5 +1,5 @@
 ---
-- hosts: b01lvi21539180
+- hosts: was_fix_hosts
   gather_facts: true
   remote_user: ansible
   become: yes
