@@ -1,5 +1,5 @@
 ---
-- hosts: '{{ exec_hosts }}'
+- hosts: b01lvi21539180
   gather_facts: true
   remote_user: ansible
   become: yes
@@ -7,9 +7,9 @@
 
   vars:
     products: [
-                {"product": "com.ibm.websphere.ND.v85_8.5.5017.20200205_1450", "link": "/opt/WebSphere/HTTPServer/htdocs/installers/was/wasfix/"},
-                {"product": "com.ibm.websphere.IHS.v85_8.5.5017.20200205_1450", "link": "/opt/WebSphere/HTTPServer/htdocs/installers/was/supplements/"},
-                {"product": "com.ibm.websphere.PLG.v85_8.5.5017.20200205_1450", "link": "/opt/WebSphere/HTTPServer/htdocs/installers/was/supplements/"}
+                {"product": "com.ibm.websphere.ND.v85_8.5.5017.20200205_1450", "link": "http://b01lvi21539180.ahe.pok.ibm.com/installers/was/wasfix/"},
+                {"product": "com.ibm.websphere.IHS.v85_8.5.5017.20200205_1450", "link": "http://b01lvi21539180.ahe.pok.ibm.com/installers/was/supplements/"},
+                {"product": "com.ibm.websphere.PLG.v85_8.5.5017.20200205_1450", "link": "http://b01lvi21539180.ahe.pok.ibm.com/installers/was/supplements/"}
               ]
 
 
