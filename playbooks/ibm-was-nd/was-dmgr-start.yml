@@ -3,11 +3,12 @@
 # ansible-playbooks -i hosts.development -k ansible-ibm-websphere/playbooks/was-server-start.yml
 #
 ---
-- name: Start Deployment Manager
-  hosts: b01lvi21539180.ahe.pok.ibm.com
-  become: true
+- name:                     Start Deployment Manager
+  hosts:                    dmgr
+  become:                   true
+  become_user:              wassrvr
   vars:
     __profile_name:         "{{ profile_name | default('Dmgr01') }}"
     __was_install_location: "{{ was_install_location  | default('/opt/WebSphere/AppServer') }}"
   roles:
-    - roles/was-dmgr-start
+    - was-dmgr-start

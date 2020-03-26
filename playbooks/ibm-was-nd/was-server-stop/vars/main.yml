@@ -1,0 +1,4 @@
+---
+__profile_name:         "{{ profile_name | default('AppSrv02') }}"
+__was_install_location: "{{ was_install_location  | default('/opt/WebSphere/AppServer') }}"
+__servers:              "{{ servers }}"

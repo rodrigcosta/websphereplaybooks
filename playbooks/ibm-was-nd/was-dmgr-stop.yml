@@ -6,8 +6,9 @@
 - name:                     Stop Deployment Manager
   hosts:                    dmgr
   become:                   true
+  become_user:              wassrvr   
   vars:
-    #__profile_name:         "{{ profile_name | default('Dmgr01') }}"
-    #__was_install_location: "{{ was_install_location  | default('/opt/IBM/WebSphere/AppServer') }}"
+    __profile_name:         "{{ profile_name | default('Dmgr01') }}"
+    __was_install_location: "{{ was_install_location  | default('/opt/WebSphere/AppServer') }}"
   roles:
     - was-dmgr-stop
