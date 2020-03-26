@@ -4,7 +4,7 @@
 #
 ---
 - name:                     Start Deployment Manager
-  hosts:                    Sandbox
+  hosts:                    all
   become:                   true
   become_user:              wassrvr
   vars:
