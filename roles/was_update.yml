@@ -1,0 +1,109 @@
+###############################################################
+## Authors        : Rodrigo Costa rodrigo.costa1@ibm.com @rodrigo.costa1 
+###############################################################
+## Script Purpose : this playbook updates WebSphere to a defined fix pack level on AIX 
+###############################################################
+## Supported OS: AIX
+###############################################################
+## Mandatory Vars :
+##             * hosts
+##             * remote_user
+##             * was_path
+##             * was_user_owner
+##             * was_group_owner
+##             * ihs_path
+##             * im_path
+##             * plg_path
+##             * shr_path
+##             * was_ver
+##             * jdk_ver
+##             * ihs_ver
+##             * plg_ver
+##             * if_ver1
+##             * if_ver2
+##             * was_fixes_repo
+##             * spl_fixes_repo
+##             * sdk_fix_repo
+##             * if_repo
+##             * if_name1
+##             * if_name2
+################################################################
+---
+- hosts: WAS
+  gather_facts: true
+  remote_user: ansible
+  become: yes
+  become_method: sudo
+
+  vars:
+    was_path: /opt/WebSphere/AppServer/
+    was_user_owner: wassrvr
+    was_group_owner: websrvr
+    ihs_path: /opt/WebSphere/HTTPServer/
+    im_path: /opt/WebSphere/InstallationManager/eclipse/tools/
+    plg_path: /opt/WebSphere/Plugins
+    shr_path: /opt/WebSphere/IMShared
+    was_ver: com.ibm.websphere.ND.v85_8.5.5016.20190801_0951
+    jdk_ver: com.ibm.websphere.IBMJAVA.v80_8.0.5037.20190801_0015
+    ihs_ver: com.ibm.websphere.IHS.v85_8.5.5016.20190801_0951
+    plg_ver: com.ibm.websphere.PLG.v85_8.5.5016.20190801_0951
+    if_ver1: 8.5.5.11-WS-WASBundledSDK8-LinuxX64-IFPH14761
+    if_ver2: install 8.0.0.0-WS-WASJavaSDK8-LinuxX64-IFPH14760
+    was_fixes_repo: http\://9.56.21.160/installers/was/wasfix/
+    spl_fixes_repo: http\://9.56.21.160/installers/was/supplements/
+    sdk_fix_repo: http\://9.56.21.160/installers/was/java/jdk8/
+    if_repo: http\://9.56.21.160/installers/was/ifix
+    if_name1:IFPH14761
+    if_name2: IFPH14760
+
+  tasks:
+    - name: Kill Processos HTTP / JAVA
+      shell: |
+        ps -ef | grep -v grep | egrep 'java' | awk '{print $2}' | while read proc; do
+                kill -9 $proc
+        done
+      args:
+        executable: /bin/bash
+
+    - name: Update WAS
+      shell: |
+        "{{ im_path }}/imcl install {{ was_ver}} -repositories {{ was_fixes_repo }} -installationDirectory {{ was_path }} -acceptLicense"
+      ignore_errors: yes
+
+    - name: Update JDK
+      shell: |
+        "{{ im_path }}/imcl install {{ jdk_ver }} -repositories {{ sdk_fix_repo }} -installationDirectory {{ was_path }} -sharedResourcesDirectory {{ shr_path }} -acceptLicense"
+      ignore_errors: yes
+
+    - name: Update IHS
+      shell: |
+        "{{ im_path }}/imcl install {{ ihs_ver }} -repositories {{ spl_fixes_repo }} -installationDirectory {{ ihs_path }} -acceptLicense"
+      ignore_errors: yes
+
+    - name: Update Plugin
+      shell: |
+        "{{ im_path }}/imcl install {{ plg_ver }} -repositories {{ spl_fixes_repo }} -installationDirectory {{ plg_path }} -acceptLicense"
+      ignore_errors: yes
+      
+    - name: IFPH14761 Installation
+      shell: |
+        "{{ im_path }}/imcl install {{ if_ver1 }} -repositories {{ if_repo }}/{{ if_name1 }}/ -installationDirectory {{ was_path }}/ -sharedResourcesDirectory {{ shr_path }} -acceptLicense"
+      ignore_errors: yes
+
+    - name: IFPH14760 Installation
+      shell: |
+        "{{ im_path }}/imcl install {{ if_ver2 }} -repositories {{ if_repo }}/{{ if_name2 }}/ -installationDirectory {{ was_path }}/ -sharedResourcesDirectory {{ shr_path }} -acceptLicense"
+      ignore_errors: yes
+
+    - name: Recursively change ownership of WAS directory
+        file:
+        path: {{ was_path }}
+        state: directory
+        recurse: yes
+        owner: {{ was_user_owner }}
+        group: {{ was_group_owner }}
+
+    - name: List Installed Packages
+        shell: |
+        "{{ im_path }}/imcl listInstalledPackages"
+
