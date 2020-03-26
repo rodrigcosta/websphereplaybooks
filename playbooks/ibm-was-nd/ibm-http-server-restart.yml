@@ -3,7 +3,7 @@
 # Variables used in this playbook that can be setup at hosts file.
 ---
 - name:                     Restart IBM HTTP Server 
-  hosts:                    ihs_servers
+  hosts:                    all
   become:                   true
 
   roles:
