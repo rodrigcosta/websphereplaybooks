@@ -4,7 +4,7 @@
 #
 ---
 - name:                     Start Deployment Manager
-  hosts:                    dmgr
+  hosts:                    b01lvi21539180.ahe.pok.ibm.com
   become:                   true
   become_user:              wassrvr
   vars:
