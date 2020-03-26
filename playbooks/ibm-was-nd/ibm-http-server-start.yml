@@ -2,7 +2,7 @@
 #
 # Variables used in this playbook that can be setup at hosts file.
 ---
-- name:                     Stop IBM HTTP Server 
+- name:                     Start IBM HTTP Server 
   hosts:                    all
   become:                   true
 
