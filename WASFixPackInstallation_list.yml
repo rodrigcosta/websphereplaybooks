@@ -1,5 +1,5 @@
 ---
-- hosts: b01lvi21539180.ahe.pok.ibm.com
+- hosts: all
   gather_facts: true
   remote_user: ansible
   become: yes
