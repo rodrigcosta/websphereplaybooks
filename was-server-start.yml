@@ -1,0 +1,22 @@
+---
+- hosts: "{{ target_hosts }}"
+  gather_facts: true
+  remote_user: ansible
+  become: yes
+  become_user: "{{ was_user }}"
+  become_method: sudo
+  
+#  vars:
+#    target_hosts: b01lvi21539180.ahe.pok.ibm.com
+#    was_user: wassrvr
+#    appserver_name: server1
+#    node_name: b01lvi21539180Node01
+#    was_install_location: /opt/WebSphere/AppServer
+
+  tasks:
+  - name: Start
+    was_server:
+      state: started 
+      name: "{{ appserver_name }}"
+      node: "{{ node_name }}" 
+      wasdir: "{{ was_install_location }}" 
