@@ -1,0 +1,15 @@
+---
+- hosts: "{{ target_hosts }}"
+  gather_facts: true
+  remote_user: ansible
+  become: yes
+  become_user: "{{ was_user }}"
+  become_method: sudo
+
+  tasks:
+  - name: Stop
+    was_server:
+      state: stopped
+      name: "{{ appserver_name }}"
+      node: "{{ node_name }}" 
+      wasdir: "{{ was_install_location }}" 
