@@ -23,7 +23,7 @@
       - "{{ products }}"
     register: UpdateResults
 
-  - name: Debug
+#  - name: Debug
     debug:
       msg: "{{ UpdateResults }}"
 
