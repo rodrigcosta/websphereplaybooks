@@ -1,0 +1,48 @@
+#===================================================================================
+# AIX Block
+#===================================================================================
+- name: Clean Remote Folders
+  file:
+    path: "{{item}}"
+    state: absent
+    owner: "{{ansibleUser}}"
+    group: "{{ansibleGroup}}"
+    mode: "{{ansiblePerm}}"
+  with_items:
+    - "{{remoteBinaryDir}}"
+  
+- name: Creating Remote Folders
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: "{{ansibleUser}}"
+    group: "{{ansibleGroup}}"
+    mode: "{{ansiblePerm}}"
+  with_items:
+    - "{{remoteBinaryDir}}"
+  when: freespace.stdout|float is gt 2560000
+
+- name: Download HCLauncher AIX Binaries
+  delegate_to: localhost
+  become: no
+  run_once: yes
+  get_url:
+    url: "{{HCurl}}/HCLauncher_aix.toolkit"
+    dest: "{{localBaseDirDownloads}}/HCLauncher_aix.toolkit"
+  when: freespace.stdout|float is gt 2560000
+
+- name: Copy Binaries to the AIX hosts
+  copy:
+    src: "{{localBaseDirDownloads}}/HCLauncher_aix.toolkit"
+    dest: "{{remoteInstallDir}}/HCLauncher_aix.toolkit"
+  when: freespace.stdout|float is gt 2560000
+
+- name: Install HCLauncher for AIX hosts
+  shell: |
+    cd {{remoteInstallDir}};tar xf HCLauncher_aix.toolkit
+    rm {{remoteInstallDir}}/HCLauncher_aix.toolkit
+  when: freespace.stdout|float is gt 2560000
+
+#===================================================================================
+# End of Playbook 
+#===================================================================================

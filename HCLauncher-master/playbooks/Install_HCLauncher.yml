@@ -1,0 +1,65 @@
+#===================================================================================
+# Playbook Name: Instal_HCLauncher.yml
+# Purpose: Download and install HC Launcher on Unix machine.
+# Release date: 03/01/2020
+#===================================================================================
+# Author: Marcelo Fernandes de Oliveira
+# Mail:   moliv@br.ibm.com
+#===================================================================================
+# Vars:
+# localBaseDir: Base directory on Ansible engine server.
+# localBaseDirScripts: Base directory for scripts.
+# localBaseDirDownloads: Base directory for downloads. 
+#===================================================================================
+# Extra Vars Needed:
+# --extra-vars
+# remoteInstallDir:
+# remote_user
+# remote_group
+#===================================================================================
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+  become_method: sudo
+  vars:
+    localBaseDir: ..
+    localBaseDirDownloads: "{{localBaseDir}}/downloads"
+    localBaseDirScripts: "{{localBaseDir}}/scripts"
+    localBaseDirTasks: "{{localBaseDir}}/tasks"
+    remoteBinaryDir: "{{remoteInstallDir}}/HCLauncher"
+    HCurl: http://mlvgsa.ibm.com/projects/s/scr/HCLTK/V18_GCM420
+    ansibleUser: "{{remote_user}}"
+    ansibleGroup: "{{remote_group}}"
+    ansiblePerm: 0750
+
+  tasks:
+  - name: Check for Previous installation
+    shell: "ls -1 {{remoteInstallDir}}/HCLauncher/HCLauncher.jar"
+    failed_when: no
+    register: HCInstall
+
+  - name: Check for Space 
+    shell: |
+      if [ $(uname) == Linux ]; then
+        df {{remoteInstallDir}} --output\=avail|tail -1
+      else 
+        df -k -c {{remoteInstallDir}}|tail -1|cut -d':' -f3
+      fi
+    register: freespace
+
+  - name: Create Download Folder
+    run_once: yes
+    delegate_to: localhost
+    become: no
+    file:
+      path: "{{localBaseDirDownloads}}"
+      state: directory
+
+  - name: Install HCLaunch on AIX
+    include_tasks: "{{localBaseDirTasks}}/InstallAIX.yml"
+    when: ansible_distribution == 'AIX'
+
+  - name: Install HCLaunch on Linux
+    include_tasks: "{{localBaseDirTasks}}/InstallLinux.yml"
+    when: ansible_system == 'Linux'

@@ -1,0 +1,245 @@
+#===================================================================================
+# Playbook Name: Instal_HCLauncher.yml
+# Purpose: Download and install HC Launcher on Unix machine.
+# Release date: 03/01/2020
+#===================================================================================
+# Author: Marcelo Fernandes de Oliveira
+# Mail:   moliv@br.ibm.com
+#===================================================================================
+# Vars:
+# localBaseDir: Base directory on Ansible engine server.
+# localBaseDirScripts: Base directory for scripts.
+# localBaseDirDownloads: Base directory for downloads. 
+#===================================================================================
+# Extra Vars Needed:
+# --extra-vars
+# remoteInstallDir:
+# remote_user
+# remote_group
+# ReportServer
+# ReportServerFolder
+#===================================================================================
+---
+  - hosts: all
+    gather_facts: yes
+    become: yes
+    become_method: sudo
+    vars:
+      localBaseDir: ..
+      localBaseDirDownloads: "{{localBaseDir}}/downloads"
+      localBaseDirScripts: "{{localBaseDir}}/scripts"
+      remoteBinaryDir: "{{remoteInstallDir}}/HCLauncher"
+      remotePolicyDir: "{{remoteInstallDir}}/HCLauncher/ansiblePolicy"
+      remoteReportDir: "{{remoteInstallDir}}/HCLauncher/ansibleReport"
+      HCurl: http://mlvgsa.ibm.com/home/t/s/tscmemea/web/public/files
+      unzipURL: https://public.dhe.ibm.com/aix/freeSoftware/aixtoolbox/RPMS/ppc/unzip
+      rsyncURL: https://public.dhe.ibm.com/aix/freeSoftware/aixtoolbox/RPMS/ppc/rsync
+      unzipFile: unzip-6.0-3.aix6.1.ppc.rpm
+      rsyncFile: rsync-3.1.3-5.aix6.1.ppc.rpm
+      ansibleUser: "{{remote_user}}"
+      ansibleGroup: "{{remote_group}}"
+      ansiblePerm: 0765
+
+    tasks:
+      - name: Create Download Folder
+        run_once: yes
+        delegate_to: localhost
+        become: no
+        file:
+          path: "{{localBaseDirDownloads}}"
+          state: directory
+
+      - name: Download HCLauncher Policies
+        delegate_to: localhost
+        become: no
+        run_once: yes
+        get_url:
+          url: "{{HCurl}}/{{item}}"
+          dest: "{{localBaseDirDownloads}}"
+        with_items:
+          - Tivoli/scm511policies/gsdisec/OpenSSH.UNIX.ITSSCSD.pol
+          - Tivoli/scm511policies/gsdisec/UNIX.AIX.ITSSCSD.pol
+          - Tivoli/scm511policies/gsdisec/UNIX.Linux.ITSSCSD.pol
+          - Sudo_st/SUDO.UNIX.ITSSCSD.pol
+
+      - name: Clean Old Policies and Reports
+        file:
+          path: "{{item}}"
+          state: absent
+        with_items:
+          - "{{remotePolicyDir}}"
+          - "{{remoteReportDir}}"
+  
+      - name: Creating Remote Folders
+        file:
+          path: "{{item}}"
+          state: directory
+          owner: "{{ansibleUser}}"
+          group: "{{ansibleGroup}}"
+          mode: "{{ansiblePerm}}"
+        with_items:
+          - "{{remotePolicyDir}}"
+          - "{{remoteReportDir}}"
+
+#===================================================================================
+# Linux Block 
+#===================================================================================
+      - block:
+        - name: Copy Linux Policies
+          copy:
+            src: "{{localBaseDirDownloads}}/{{item}}"
+            dest: "{{remotePolicyDir}}"
+            owner: "{{ansibleUser}}"
+            group: "{{ansibleGroup}}"
+            mode: "{{ansiblePerm}}"
+          with_items:
+            - UNIX.Linux.ITSSCSD.pol
+            - OpenSSH.UNIX.ITSSCSD.pol
+            - SUDO.UNIX.ITSSCSD.pol
+
+        - name: Install Unzip for Linux
+          yum:
+            name: unzip
+            state: present
+        
+        - name: Install rsync for Linux
+          yum:
+            name: rsync
+            state: present
+
+        - name: Run HCLauncher 
+          script: "{{localBaseDirScripts}}/hc_run.sh {{remoteBinaryDir}} {{remotePolicyDir}} {{item}} {{remoteReportDir}} {{now(fmt='%d%B%Y')}} {{ansible_hostname}}"
+          with_items:
+            - UNIX.Linux.ITSSCSD.pol
+            - OpenSSH.UNIX.ITSSCSD.pol
+            - SUDO.UNIX.ITSSCSD.pol
+
+        - name: List Reports
+          shell: "ls -1 {{remoteReportDir}}/*.pdf"
+          register: reportList
+
+        - name: Fix Permission
+          file:
+            path: "{{item}}"
+            owner: "{{ansibleUser}}"
+            group: "{{ansibleGroup}}"
+            mode: "{{ansiblePerm}}"
+          with_items: 
+            - "{{remoteBinaryDir}}"
+            - "{{remotePolicyDir}}"
+            - "{{remoteReportDir}}"
+            - "{{reportList.stdout_lines}}"
+
+        - name: "Sending Reports to {{ReportServer}}"
+          shell: "scp -o StrictHostKeyChecking=no -rp {{ansibleUser}}@{{ansible_hostname}}:{{item}} {{ReportServerFolder}}"
+          delegate_to: "{{ReportServer}}"
+          become: no
+          with_items: "{{reportList.stdout_lines}}"
+          when: ReportServer is defined and ReportServerFolder is defined
+        when: ansible_system == 'Linux'
+
+#===================================================================================
+# AIX Block 
+#===================================================================================
+      - block:
+        - name: Copy AIX Policies
+          copy:
+            src: "{{localBaseDirDownloads}}/{{item}}"
+            dest: "{{remotePolicyDir}}"
+            owner: "{{ansibleUser}}"
+            group: "{{ansibleGroup}}"
+            mode: "{{ansiblePerm}}"
+          with_items:
+            - UNIX.AIX.ITSSCSD.pol
+            - OpenSSH.UNIX.ITSSCSD.pol
+            - SUDO.UNIX.ITSSCSD.pol
+
+        - name: Check for Unzip 
+          shell: rpm -qa | grep unzip
+          failed_when: no
+          register: unzip
+
+        - name: Check for rsync 
+          shell: rpm -qa | grep rsync
+          failed_when: no
+          register: rsync
+
+        - block:
+          - name: Download Unzip 
+            delegate_to: localhost
+            become: no
+            run_once: yes
+            get_url:
+              url: "{{unzipURL}}/{{unzipFile}}"
+              dest: "{{localBaseDirDownloads}}"
+            
+          - name: copy Unzip
+            copy:
+              src: "{{localBaseDirDownloads}}/{{unzipFile}}"
+              dest: /tmp
+              owner: "{{ansibleUser}}"
+              group: "{{ansibleGroup}}"
+              mode: "{{ansiblePerm}}"
+
+          - name: Install Unzip for AIX
+            shell: |
+                rpm -ivh /tmp/{{unzipFile}}
+                rm -rf /tmp/{{unzipFile}} 
+          when: unzip.rc != '0'
+
+        - block:
+          - name: Download rsync 
+            delegate_to: localhost
+            become: no
+            run_once: yes
+            get_url:
+              url: "{{rsyncURL}}/{{rsyncFile}}"
+              dest: "{{localBaseDirDownloads}}"
+            
+          - name: copy rsync
+            copy:
+              src: "{{localBaseDirDownloads}}/{{rsyncFile}}"
+              dest: /tmp
+              owner: "{{ansibleUser}}"
+              group: "{{ansibleGroup}}"
+              mode: "{{ansiblePerm}}"
+
+          - name: Install rsync for AIX
+            shell: |
+                rpm -ivh /tmp/{{rsyncFile}}
+                rm -rf /tmp/{{rsyncFile}} 
+          when: rsync.rc != '0'
+
+        - name: Run HCLauncher 
+          script: "{{localBaseDirScripts}}/hc_run.sh {{remoteBinaryDir}} {{remotePolicyDir}} {{item}} {{remoteReportDir}} {{now(fmt='%d%B%Y')}} {{ansible_hostname}}"
+          with_items:
+            - UNIX.AIX.ITSSCSD.pol
+            - OpenSSH.UNIX.ITSSCSD.pol
+            - SUDO.UNIX.ITSSCSD.pol
+
+        - name: List Reports
+          shell: "ls -1 {{remoteReportDir}}/*.pdf"
+          register: reportList
+            
+        - name: Fix Permission
+          file:
+            path: "{{item}}"
+            owner: "{{ansibleUser}}"
+            group: "{{ansibleGroup}}"
+            mode: "{{ansiblePerm}}"
+          with_items: 
+            - "{{remoteBinaryDir}}"
+            - "{{remotePolicyDir}}"
+            - "{{remoteReportDir}}"
+            - "{{reportList.stdout_lines}}"
+
+        - name: "Sending Reports to {{ReportServer}}"
+          shell: "scp -o StrictHostKeyChecking=no -rp {{ansibleUser}}@{{ansible_hostname}}:{{item}} {{ReportServerFolder}}"
+          delegate_to: "{{ReportServer}}"
+          become: no
+          with_items: "{{reportList.stdout_lines}}"
+          when: ReportServer is defined and ReportServerFolder is defined
+        when: ansible_distribution == 'AIX' 
+#===================================================================================
+# End of Playbook 
+#===================================================================================

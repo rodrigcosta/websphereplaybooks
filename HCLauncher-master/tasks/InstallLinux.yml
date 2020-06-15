@@ -1,0 +1,48 @@
+#===================================================================================
+# Linux Block
+#===================================================================================
+- name: Clean Remote Folders
+  file:
+    path: "{{item}}"
+    state: absent
+    owner: "{{ansibleUser}}"
+    group: "{{ansibleGroup}}"
+    mode: "{{ansiblePerm}}"
+  with_items:
+    - "{{remoteBinaryDir}}"
+
+- name: Creating Remote Folders
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: "{{ansibleUser}}"
+    group: "{{ansibleGroup}}"
+    mode: "{{ansiblePerm}}"
+  with_items:
+    - "{{remoteBinaryDir}}"
+  when: freespace.stdout|float is gt 2560000
+
+- name: Download HCLauncher Linux Binaries
+  delegate_to: localhost
+  become: no
+  run_once: yes
+  get_url:
+    url: "{{HCurl}}/HCLauncher_linux.toolkit"
+    dest: "{{localBaseDirDownloads}}/HCLauncher_linux.toolkit"
+  when: freespace.stdout|float is gt 2560000
+
+- name: Copy Binaries to the Linux hosts
+  copy:
+    src: "{{localBaseDirDownloads}}/HCLauncher_linux.toolkit"
+    dest: "{{remoteInstallDir}}/HCLauncher_linux.toolkit"
+  when: freespace.stdout|float is gt 2560000
+
+- name: Install HCLauncher for Linux hosts
+  shell: |
+    cd {{remoteInstallDir}};tar xf HCLauncher_linux.toolkit
+    rm {{remoteInstallDir}}/HCLauncher_linux.toolkit
+  when: freespace.stdout|float is gt 2560000
+
+#===================================================================================
+# End of Playbook 
+#===================================================================================
