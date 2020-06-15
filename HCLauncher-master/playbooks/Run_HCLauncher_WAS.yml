@@ -91,8 +91,8 @@
             group: "{{ansibleGroup}}"
             mode: "{{ansiblePerm}}"
           with_items:
-            - WAS/WAS.UNIX.ITSS_CSD2.pol
-            - Apache/Apache.UNIX.ITSSCSD.pol
+            - WAS.UNIX.ITSS_CSD2.pol
+            - Apache.UNIX.ITSSCSD.pol
 
         - name: Install Unzip for Linux
           yum:
@@ -107,8 +107,8 @@
         - name: Run HCLauncher 
           script: "{{localBaseDirScripts}}/hc_run.sh {{remoteBinaryDir}} {{remotePolicyDir}} {{item}} {{remoteReportDir}} {{now(fmt='%d%B%Y')}} {{ansible_hostname}}"
           with_items:
-            - WAS/WAS.UNIX.ITSS_CSD2.pol
-            - Apache/Apache.UNIX.ITSSCSD.pol
+            - WAS.UNIX.ITSS_CSD2.pol
+            - Apache.UNIX.ITSSCSD.pol
 
         - name: List Reports
           shell: "ls -1 {{remoteReportDir}}/*.pdf"
@@ -146,8 +146,8 @@
             group: "{{ansibleGroup}}"
             mode: "{{ansiblePerm}}"
           with_items:
-            - WAS/WAS.UNIX.ITSS_CSD2.pol
-            - Apache/Apache.UNIX.ITSSCSD.pol
+            - WAS.UNIX.ITSS_CSD2.pol
+            - Apache.UNIX.ITSSCSD.pol
 
         - name: Check for Unzip 
           shell: rpm -qa | grep unzip
@@ -208,8 +208,8 @@
         - name: Run HCLauncher 
           script: "{{localBaseDirScripts}}/hc_run.sh {{remoteBinaryDir}} {{remotePolicyDir}} {{item}} {{remoteReportDir}} {{now(fmt='%d%B%Y')}} {{ansible_hostname}}"
           with_items:
-            - WAS/WAS.UNIX.ITSS_CSD2.pol
-            - Apache/Apache.UNIX.ITSSCSD.pol
+            - WAS.UNIX.ITSS_CSD2.pol
+            - Apache.UNIX.ITSSCSD.pol
 
         - name: List Reports
           shell: "ls -1 {{remoteReportDir}}/*.pdf"
