@@ -18,7 +18,7 @@
 # remote_group
 #===================================================================================
 ---
-- hosts: all
+- hosts: "{{ target_hosts }}"
   gather_facts: yes
   become: yes
   become_method: sudo
